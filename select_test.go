@@ -49,6 +49,30 @@ func TestSelector_Build(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name: "single predicate",
+			s:    NewSelector[TestModel]().Where(C("id").Eq(12)),
+			wantQuery: &Query{
+				SQL:  "SELECT * FROM `TestModel` WHERE `id` = ?;",
+				Args: []any{12},
+			},
+		},
+		{
+			name: "multi predicate",
+			s:    NewSelector[TestModel]().Where(C("Age").Gt(18), C("Age").Lt(35)),
+			wantQuery: &Query{
+				SQL:  "SELECT * FROM `TestModel` WHERE (`Age` > ?) AND (`Age` < ?);",
+				Args: []any{18, 35},
+			},
+		},
+		{
+			name: "not predicate",
+			s:    NewSelector[TestModel]().Where(Not(C("Age").Gt(18))),
+			wantQuery: &Query{
+				SQL:  "SELECT * FROM `TestModel` WHERE  NOT (`Age` > ?);",
+				Args: []any{18},
+			},
+		},
 	}
 
 	for _, test := range tests {
