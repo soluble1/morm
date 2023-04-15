@@ -3,10 +3,13 @@ package morm
 import (
 	"database/sql"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestSelector_Build(t *testing.T) {
+	db, err := NewDB()
+	require.NoError(t, err)
 	tests := []struct {
 		name      string
 		s         QueryBuilder
@@ -15,7 +18,7 @@ func TestSelector_Build(t *testing.T) {
 	}{
 		{
 			name: "From",
-			s:    NewSelector[TestModel]().From("`test_sql_model`"),
+			s:    NewSelector[TestModel](db).From("`test_sql_model`"),
 			wantQuery: &Query{
 				SQL:  "SELECT * FROM `test_sql_model`;",
 				Args: nil,
@@ -24,25 +27,25 @@ func TestSelector_Build(t *testing.T) {
 		},
 		{
 			name: "not From",
-			s:    &Selector[TestModel]{},
+			s:    NewSelector[TestModel](db),
 			wantQuery: &Query{
-				SQL:  "SELECT * FROM `TestModel`;",
+				SQL:  "SELECT * FROM `test_model`;",
 				Args: nil,
 			},
 			wantErr: nil,
 		},
 		{
 			name: "null From",
-			s:    NewSelector[TestModel]().From(""),
+			s:    NewSelector[TestModel](db).From(""),
 			wantQuery: &Query{
-				SQL:  "SELECT * FROM `TestModel`;",
+				SQL:  "SELECT * FROM `test_model`;",
 				Args: nil,
 			},
 			wantErr: nil,
 		},
 		{
 			name: "with db",
-			s:    NewSelector[TestModel]().From("`test_db`.`test_model`"),
+			s:    NewSelector[TestModel](db).From("`test_db`.`test_model`"),
 			wantQuery: &Query{
 				SQL:  "SELECT * FROM `test_db`.`test_model`;",
 				Args: nil,
@@ -51,26 +54,35 @@ func TestSelector_Build(t *testing.T) {
 		},
 		{
 			name: "single predicate",
-			s:    NewSelector[TestModel]().Where(C("id").Eq(12)),
+			s:    NewSelector[TestModel](db).Where(C("Id").Eq(12)),
 			wantQuery: &Query{
-				SQL:  "SELECT * FROM `TestModel` WHERE `id` = ?;",
+				SQL:  "SELECT * FROM `test_model` WHERE `id` = ?;",
 				Args: []any{12},
 			},
 		},
 		{
 			name: "multi predicate",
-			s:    NewSelector[TestModel]().Where(C("Age").Gt(18), C("Age").Lt(35)),
+			s:    NewSelector[TestModel](db).Where(C("Age").Gt(18), C("Age").Lt(35)),
 			wantQuery: &Query{
-				SQL:  "SELECT * FROM `TestModel` WHERE (`Age` > ?) AND (`Age` < ?);",
+				SQL:  "SELECT * FROM `test_model` WHERE (`age` > ?) AND (`age` < ?);",
 				Args: []any{18, 35},
 			},
 		},
 		{
 			name: "not predicate",
-			s:    NewSelector[TestModel]().Where(Not(C("Age").Gt(18))),
+			s:    NewSelector[TestModel](db).Where(Not(C("Age").Gt(18))),
 			wantQuery: &Query{
-				SQL:  "SELECT * FROM `TestModel` WHERE  NOT (`Age` > ?);",
+				SQL:  "SELECT * FROM `test_model` WHERE NOT (`age` > ?);",
 				Args: []any{18},
+			},
+		},
+		{
+			name: "more predicate",
+			s: NewSelector[TestModel](db).
+				Where(Not(C("Age").Gt(18)), C("Id").Eq(8).Or(C("FirstName").Eq("xiaolong"))),
+			wantQuery: &Query{
+				SQL:  "SELECT * FROM `test_model` WHERE NOT (`age` > ?) AND ((`id` = ?) OR (`first_name` = ?));",
+				Args: []any{18, 8, "xiaolong"},
 			},
 		},
 	}

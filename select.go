@@ -3,7 +3,7 @@ package morm
 import (
 	"context"
 	"errors"
-	"reflect"
+	"morm/internal/errs"
 	"strings"
 )
 
@@ -12,7 +12,9 @@ type Selector[T any] struct {
 	where []Predicate
 	sb    strings.Builder
 
-	args []any
+	args  []any
+	model *Model
+	db    *DB
 }
 
 func (s *Selector[T]) Where(ps ...Predicate) *Selector[T] {
@@ -25,18 +27,23 @@ func (s *Selector[T]) From(tbl string) *Selector[T] {
 	return s
 }
 
-func NewSelector[T any]() *Selector[T] {
-	return &Selector[T]{}
+func NewSelector[T any](db *DB) *Selector[T] {
+	return &Selector[T]{
+		db: db,
+	}
 }
 
 func (s *Selector[T]) Build() (*Query, error) {
+	t := new(T)
+	var err error
+	s.model, err = s.db.r.Get(t)
+	if err != nil {
+		return nil, err
+	}
 	s.sb.WriteString("SELECT * FROM ")
 	if s.tbl == "" {
-		var t T
-		typ := reflect.TypeOf(t)
-		name := typ.Name()
 		s.sb.WriteByte('`')
-		s.sb.WriteString(name)
+		s.sb.WriteString(s.model.tableName)
 		s.sb.WriteByte('`')
 	} else {
 		s.sb.WriteString(s.tbl)
@@ -73,21 +80,28 @@ func (s *Selector[T]) buildExpression(expression Expression) error {
 		s.args = append(s.args, expr.val)
 	case Column:
 		s.sb.WriteByte('`')
-		s.sb.WriteString(expr.name)
+		fd, ok := s.model.fieldMap[expr.name]
+		if !ok {
+			return errs.NewErrUnKnowField(expr.name)
+		}
+		s.sb.WriteString(fd.colName)
 		s.sb.WriteByte('`')
 	case Predicate:
-		_, ok := expr.left.(Predicate)
-		if ok {
+		P, ok := expr.left.(Predicate)
+		if ok && P.op != opNOT {
 			s.sb.WriteByte('(')
 		}
 		if err := s.buildExpression(expr.left); err != nil {
 			return err
 		}
-		if ok {
+		if ok && P.op != opNOT {
 			s.sb.WriteByte(')')
 		}
 
-		s.sb.WriteByte(' ')
+		if expr.op != opNOT {
+			s.sb.WriteByte(' ')
+
+		}
 		s.sb.WriteString(expr.op.String())
 		s.sb.WriteByte(' ')
 
