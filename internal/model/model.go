@@ -1,14 +1,20 @@
-package morm
+package model
 
-import "morm/internal/errs"
+import (
+	"morm/internal/errs"
+	"reflect"
+)
 
 type ModelOpt func(m *Model) error
 
 type Model struct {
 	// 结构体对应的表名
-	tableName string
+	TableName string
 	// 字段名对应的列名
-	fieldMap map[string]*field
+	FieldMap map[string]*field
+
+	// 列名到字段的映射
+	ColumnMap map[string]*field
 }
 
 func ModelWithTableName(name string) ModelOpt {
@@ -16,32 +22,39 @@ func ModelWithTableName(name string) ModelOpt {
 		if name == "" {
 			return errs.ErrEmptyTableName
 		}
-		m.tableName = name
+		m.TableName = name
 		return nil
 	}
 }
 
 func ModeWithColumnName(field string, colName string) ModelOpt {
 	return func(m *Model) error {
-		fd, ok := m.fieldMap[field]
+		fd, ok := m.FieldMap[field]
 		if !ok {
 			return errs.NewErrUnKnowField(field)
 		}
-		fd.colName = colName
+		fd.ColName = colName
 		return nil
 	}
 }
 
 func ModeWithColumn(field string, col *field) ModelOpt {
 	return func(m *Model) error {
-		m.fieldMap[field] = col
+		m.FieldMap[field] = col
 		return nil
 	}
 }
 
 type field struct {
+	// 字段名
+	GoName string
 	// 字段对应的列名
-	colName string
+	ColName string
+
+	// 字段偏移量
+	Offset uintptr
+
+	Typ reflect.Type
 }
 
 type TableName interface {

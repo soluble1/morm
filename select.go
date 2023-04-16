@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"morm/internal/errs"
+	model2 "morm/internal/model"
 	"strings"
 )
 
@@ -13,7 +14,7 @@ type Selector[T any] struct {
 	sb    strings.Builder
 
 	args  []any
-	model *Model
+	model *model2.Model
 	db    *DB
 }
 
@@ -43,7 +44,7 @@ func (s *Selector[T]) Build() (*Query, error) {
 	s.sb.WriteString("SELECT * FROM ")
 	if s.tbl == "" {
 		s.sb.WriteByte('`')
-		s.sb.WriteString(s.model.tableName)
+		s.sb.WriteString(s.model.TableName)
 		s.sb.WriteByte('`')
 	} else {
 		s.sb.WriteString(s.tbl)
@@ -80,11 +81,11 @@ func (s *Selector[T]) buildExpression(expression Expression) error {
 		s.args = append(s.args, expr.val)
 	case Column:
 		s.sb.WriteByte('`')
-		fd, ok := s.model.fieldMap[expr.name]
+		fd, ok := s.model.FieldMap[expr.name]
 		if !ok {
 			return errs.NewErrUnKnowField(expr.name)
 		}
-		s.sb.WriteString(fd.colName)
+		s.sb.WriteString(fd.ColName)
 		s.sb.WriteByte('`')
 	case Predicate:
 		P, ok := expr.left.(Predicate)
@@ -122,8 +123,21 @@ func (s *Selector[T]) buildExpression(expression Expression) error {
 }
 
 func (s *Selector[T]) Get(ctx context.Context) (*T, error) {
-	//TODO implement me
-	panic("implement me")
+	q, err := s.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.db.db.QueryContext(ctx, q.SQL, q.Args...)
+	if err != nil {
+		return nil, err
+	}
+
+	t := new(T)
+
+	val := s.db.valCreator(t, s.model)
+
+	return t, val.SetColumns(rows)
 }
 
 func (s *Selector[T]) GetMulti(ctx context.Context) ([]*T, error) {

@@ -1,4 +1,4 @@
-package morm
+package model
 
 import (
 	"morm/internal/errs"
@@ -16,6 +16,10 @@ type Registry interface {
 
 type registry struct {
 	models sync.Map
+}
+
+func NewRegistry() Registry {
+	return &registry{}
 }
 
 func (r *registry) Get(val any) (*Model, error) {
@@ -44,6 +48,7 @@ func (r *registry) Register(val any, opts ...ModelOpt) (*Model, error) {
 	numField := typ.NumField()
 
 	fieldMap := make(map[string]*field, numField)
+	colMap := make(map[string]*field, numField)
 	for i := 0; i < numField; i++ {
 		fd := typ.Field(i)
 		ormTagStrs := r.parseTag(fd.Tag)
@@ -52,9 +57,14 @@ func (r *registry) Register(val any, opts ...ModelOpt) (*Model, error) {
 		if !ok || colName == "" {
 			colName = underscoreName(fd.Name)
 		}
-		fieldMap[fd.Name] = &field{
-			colName: colName,
+		fdData := &field{
+			ColName: colName,
+			Typ:     fd.Type,
+			GoName:  fd.Name,
+			Offset:  fd.Offset,
 		}
+		fieldMap[fd.Name] = fdData
+		colMap[colName] = fdData
 	}
 
 	var tableName string
@@ -66,8 +76,9 @@ func (r *registry) Register(val any, opts ...ModelOpt) (*Model, error) {
 	}
 
 	res := &Model{
-		tableName: underscoreName(typ.Name()),
-		fieldMap:  fieldMap,
+		TableName: underscoreName(typ.Name()),
+		FieldMap:  fieldMap,
+		ColumnMap: colMap,
 	}
 
 	for _, opt := range opts {

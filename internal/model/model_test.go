@@ -1,6 +1,7 @@
-package morm
+package model
 
 import (
+	"database/sql"
 	"github.com/stretchr/testify/assert"
 	"morm/internal/errs"
 	"testing"
@@ -17,19 +18,19 @@ func Test_parseModel(t *testing.T) {
 			name:  "ptr",
 			input: &TestModel{},
 			wantModel: &Model{
-				tableName: "test_model",
-				fieldMap: map[string]*field{
+				TableName: "test_model",
+				FieldMap: map[string]*field{
 					"Id": {
-						colName: "id",
+						ColName: "id",
 					},
 					"FirstName": {
-						colName: "first_name",
+						ColName: "first_name",
 					},
 					"Age": {
-						colName: "age",
+						ColName: "age",
 					},
 					"LastName": {
-						colName: "last_name",
+						ColName: "last_name",
 					},
 				},
 			},
@@ -59,11 +60,11 @@ func Test_parseModel(t *testing.T) {
 				return &ColumnTag{}
 			}(),
 			wantModel: &Model{
-				tableName: "column_tag",
-				fieldMap: map[string]*field{
+				TableName: "column_tag",
+				FieldMap: map[string]*field{
 					// 默认是 i_d
 					"ID": {
-						colName: "id",
+						ColName: "id",
 					},
 				},
 			},
@@ -71,7 +72,7 @@ func Test_parseModel(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			r := &registry{}
+			r := registry{}
 			m, err := r.Register(tt.input)
 			assert.Equal(t, tt.wantErr, err)
 			if err != nil {
@@ -80,4 +81,11 @@ func Test_parseModel(t *testing.T) {
 			assert.Equal(t, tt.wantModel, m)
 		})
 	}
+}
+
+type TestModel struct {
+	Id        int64
+	FirstName string
+	Age       int8
+	LastName  *sql.NullString
 }
