@@ -27,7 +27,7 @@ func ModelWithTableName(name string) ModelOpt {
 	}
 }
 
-func ModeWithColumnName(field string, colName string) ModelOpt {
+func ModelWithColumnName(field string, colName string) ModelOpt {
 	return func(m *Model) error {
 		fd, ok := m.FieldMap[field]
 		if !ok {
@@ -38,7 +38,7 @@ func ModeWithColumnName(field string, colName string) ModelOpt {
 	}
 }
 
-func ModeWithColumn(field string, col *field) ModelOpt {
+func ModelWithColumn(field string, col *field) ModelOpt {
 	return func(m *Model) error {
 		m.FieldMap[field] = col
 		return nil

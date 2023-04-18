@@ -16,6 +16,13 @@ type Selector[T any] struct {
 	args  []any
 	model *model2.Model
 	db    *DB
+
+	columns []Selectable
+}
+
+func (s *Selector[T]) Select(cols ...Selectable) *Selector[T] {
+	s.columns = cols
+	return s
 }
 
 func (s *Selector[T]) Where(ps ...Predicate) *Selector[T] {
@@ -41,7 +48,47 @@ func (s *Selector[T]) Build() (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	s.sb.WriteString("SELECT * FROM ")
+	s.sb.WriteString("SELECT ")
+	if len(s.columns) == 0 {
+		s.sb.WriteString("*")
+	} else {
+		for i, c := range s.columns {
+			switch col := c.(type) {
+			case Column:
+				fd, ok := s.model.FieldMap[col.name]
+				if !ok {
+					return nil, errs.NewErrUnKnowField(col.name)
+				}
+				if i > 0 {
+					s.sb.WriteByte(',')
+				}
+				s.sb.WriteByte('`')
+				s.sb.WriteString(fd.ColName)
+				s.sb.WriteByte('`')
+			case Aggregate:
+				fd, ok := s.model.FieldMap[col.arg]
+				if !ok {
+					return nil, errs.NewErrUnKnowField(col.arg)
+				}
+				if i > 0 {
+					s.sb.WriteByte(',')
+				}
+				s.sb.WriteString(col.fn)
+				s.sb.WriteByte('(')
+				s.sb.WriteByte('`')
+				s.sb.WriteString(fd.ColName)
+				s.sb.WriteByte('`')
+				s.sb.WriteByte(')')
+			case RawExpr:
+				s.sb.WriteString(col.raw)
+				if len(col.args) > 0 {
+					s.args = append(s.args, col.args...)
+				}
+			}
+		}
+	}
+	s.sb.WriteString(" FROM ")
+
 	if s.tbl == "" {
 		s.sb.WriteByte('`')
 		s.sb.WriteString(s.model.TableName)
@@ -99,12 +146,14 @@ func (s *Selector[T]) buildExpression(expression Expression) error {
 			s.sb.WriteByte(')')
 		}
 
-		if expr.op != opNOT {
+		if expr.op != opNOT && expr.op != "" {
 			s.sb.WriteByte(' ')
 
 		}
 		s.sb.WriteString(expr.op.String())
-		s.sb.WriteByte(' ')
+		if expr.op != "" {
+			s.sb.WriteByte(' ')
+		}
 
 		_, ok = expr.right.(Predicate)
 		if ok {
@@ -116,6 +165,9 @@ func (s *Selector[T]) buildExpression(expression Expression) error {
 		if ok {
 			s.sb.WriteByte(')')
 		}
+	case RawExpr:
+		s.sb.WriteString(expr.raw)
+		s.args = append(s.args, expr.args...)
 	default:
 		return errors.New("orm: 不支持的表达式")
 	}
@@ -141,6 +193,6 @@ func (s *Selector[T]) Get(ctx context.Context) (*T, error) {
 }
 
 func (s *Selector[T]) GetMulti(ctx context.Context) ([]*T, error) {
-	//TODO implement me
+	// TODO implement me
 	panic("implement me")
 }

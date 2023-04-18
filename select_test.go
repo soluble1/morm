@@ -209,6 +209,65 @@ func TestSelector_Get(t *testing.T) {
 
 }
 
+func TestSelector_Select(t *testing.T) {
+	db := memoryDB(t)
+	tests := []struct {
+		name      string
+		s         QueryBuilder
+		wantQuery *Query
+		wantErr   error
+	}{
+		{
+			// 指定列
+			name: "specify columns",
+			s:    NewSelector[TestModel](db).Select(C("Id"), C("Age")),
+			wantQuery: &Query{
+				SQL: "SELECT `id`,`age` FROM `test_model`;",
+			},
+		},
+		{
+			// 指定聚合函数
+			name: "specify aggregate",
+			s:    NewSelector[TestModel](db).Select(Min("Id"), Avg("Age")),
+			wantQuery: &Query{
+				SQL: "SELECT MIN(`id`),AVG(`age`) FROM `test_model`;",
+			},
+		},
+		{
+			name:    "count distinct 01",
+			s:       NewSelector[TestModel](db).Select(Count("DISTINCT `first_name`")),
+			wantErr: errs.NewErrUnKnowField("DISTINCT `first_name`"),
+		},
+		{
+			name: "count distinct 02",
+			s:    NewSelector[TestModel](db).Select(Raw("DISTINCT `first_name`")),
+			wantQuery: &Query{
+				SQL: "SELECT DISTINCT `first_name` FROM `test_model`;",
+			},
+		},
+		{
+			name: "raw expression",
+			s: NewSelector[TestModel](db).
+				Where(Raw("`age` < ?", 18).AsPredicate()),
+			wantQuery: &Query{
+				SQL:  "SELECT * FROM `test_model` WHERE `age` < ?;",
+				Args: []any{18},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			q, err := test.s.Build()
+			assert.Equal(t, test.wantErr, err)
+			if err != nil {
+				return
+			}
+			assert.Equal(t, test.wantQuery, q)
+		})
+	}
+}
+
 /*
 goos: windows
 goarch: amd64
