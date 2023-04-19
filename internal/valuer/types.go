@@ -2,7 +2,7 @@ package valuer
 
 import (
 	"database/sql"
-	"morm/model"
+	"github.com/soluble1/morm/model"
 )
 
 // Value 是对结构体实例的内部抽象

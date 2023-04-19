@@ -2,8 +2,8 @@ package valuer
 
 import (
 	"database/sql"
-	"morm/internal/errs"
-	"morm/model"
+	"github.com/soluble1/morm/internal/errs"
+	"github.com/soluble1/morm/model"
 	"reflect"
 )
 

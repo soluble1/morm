@@ -1,7 +1,7 @@
 package model
 
 import (
-	"morm/internal/errs"
+	"github.com/soluble1/morm/internal/errs"
 	"reflect"
 )
 

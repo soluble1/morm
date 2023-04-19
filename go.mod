@@ -1,4 +1,4 @@
-module morm
+module github.com/soluble1/morm
 
 go 1.19
 

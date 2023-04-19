@@ -1,7 +1,7 @@
 package morm
 
 import (
-	"morm/model"
+	"github.com/soluble1/morm/model"
 	"strings"
 )
 

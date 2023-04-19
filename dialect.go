@@ -1,7 +1,7 @@
 package morm
 
 import (
-	"morm/internal/errs"
+	"github.com/soluble1/morm/internal/errs"
 )
 
 // Dialect 方言构造部分

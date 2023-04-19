@@ -1,6 +1,6 @@
 package morm
 
-import "morm/internal/errs"
+import "github.com/soluble1/morm/internal/errs"
 
 var (
 	ErrNoRows = errs.ErrNoRows

@@ -3,7 +3,7 @@ package morm
 import (
 	"context"
 	"errors"
-	"morm/internal/errs"
+	"github.com/soluble1/morm/internal/errs"
 )
 
 type Selector[T any] struct {

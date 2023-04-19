@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/soluble1/morm/internal/errs"
+	"github.com/soluble1/morm/internal/valuer"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"morm/internal/errs"
-	"morm/internal/valuer"
 	"testing"
 )
 

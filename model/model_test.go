@@ -2,8 +2,8 @@ package model
 
 import (
 	"database/sql"
+	"github.com/soluble1/morm/internal/errs"
 	"github.com/stretchr/testify/assert"
-	"morm/internal/errs"
 	"testing"
 )
 

@@ -2,8 +2,8 @@ package morm
 
 import (
 	"database/sql"
-	"morm/internal/valuer"
-	"morm/model"
+	"github.com/soluble1/morm/internal/valuer"
+	"github.com/soluble1/morm/model"
 )
 
 type DBOption func(db *DB)
