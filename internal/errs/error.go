@@ -11,6 +11,7 @@ var (
 	ErrEmptyTableName = errors.New("orm: 表名为空")
 	ErrTooManyColumns = errors.New("orm: 过多列")
 	ErrNoRows         = errors.New("orm: 未找到数据")
+	ErrInsertZeroRow  = errors.New("orm: 插入0行")
 )
 
 func NewErrUnKnowField(name string) error {

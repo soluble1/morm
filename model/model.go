@@ -11,10 +11,12 @@ type Model struct {
 	// 结构体对应的表名
 	TableName string
 	// 字段名对应的列名
-	FieldMap map[string]*field
+	FieldMap map[string]*Field
 
 	// 列名到字段的映射
-	ColumnMap map[string]*field
+	ColumnMap map[string]*Field
+
+	Fields []*Field
 }
 
 func ModelWithTableName(name string) ModelOpt {
@@ -38,14 +40,14 @@ func ModelWithColumnName(field string, colName string) ModelOpt {
 	}
 }
 
-func ModelWithColumn(field string, col *field) ModelOpt {
+func ModelWithColumn(field string, col *Field) ModelOpt {
 	return func(m *Model) error {
 		m.FieldMap[field] = col
 		return nil
 	}
 }
 
-type field struct {
+type Field struct {
 	// 字段名
 	GoName string
 	// 字段对应的列名
@@ -55,6 +57,8 @@ type field struct {
 	Offset uintptr
 
 	Typ reflect.Type
+
+	Index []int
 }
 
 type TableName interface {

@@ -4,18 +4,14 @@ import (
 	"context"
 	"errors"
 	"morm/internal/errs"
-	model2 "morm/internal/model"
-	"strings"
 )
 
 type Selector[T any] struct {
+	builder
 	tbl   string
 	where []Predicate
-	sb    strings.Builder
 
-	args  []any
-	model *model2.Model
-	db    *DB
+	db *DB
 
 	columns []Selectable
 }

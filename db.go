@@ -2,8 +2,8 @@ package morm
 
 import (
 	"database/sql"
-	"morm/internal/model"
 	"morm/internal/valuer"
+	"morm/model"
 )
 
 type DBOption func(db *DB)
@@ -13,6 +13,8 @@ type DB struct {
 	r  model.Registry
 
 	valCreator valuer.Creator
+
+	dialect Dialect
 }
 
 func DBWithRegistry(r model.Registry) DBOption {
@@ -35,6 +37,7 @@ func OpenDB(db *sql.DB, opts ...DBOption) (*DB, error) {
 		r:          model.NewRegistry(),
 		db:         db,
 		valCreator: valuer.NewUnsafeValue,
+		dialect:    &mysqlDialect{},
 	}
 
 	for _, opt := range opts {
@@ -47,5 +50,11 @@ func OpenDB(db *sql.DB, opts ...DBOption) (*DB, error) {
 func DBUseReflectValuer() DBOption {
 	return func(db *DB) {
 		db.valCreator = valuer.NewReflectValue
+	}
+}
+
+func DBWithDialect(dialect Dialect) DBOption {
+	return func(db *DB) {
+		db.dialect = dialect
 	}
 }

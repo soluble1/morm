@@ -48,6 +48,8 @@ func (c Column) selectable() {}
 
 func (c Column) expr() {}
 
+func (c Column) assign() {}
+
 func C(name string) Column {
 	return Column{name: name}
 }

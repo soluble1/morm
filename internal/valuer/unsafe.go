@@ -3,7 +3,7 @@ package valuer
 import (
 	"database/sql"
 	"morm/internal/errs"
-	"morm/internal/model"
+	"morm/model"
 	"reflect"
 	"unsafe"
 )

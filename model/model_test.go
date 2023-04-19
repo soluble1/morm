@@ -19,7 +19,7 @@ func Test_parseModel(t *testing.T) {
 			input: &TestModel{},
 			wantModel: &Model{
 				TableName: "test_model",
-				FieldMap: map[string]*field{
+				FieldMap: map[string]*Field{
 					"Id": {
 						ColName: "id",
 					},
@@ -61,7 +61,7 @@ func Test_parseModel(t *testing.T) {
 			}(),
 			wantModel: &Model{
 				TableName: "column_tag",
-				FieldMap: map[string]*field{
+				FieldMap: map[string]*Field{
 					// 默认是 i_d
 					"ID": {
 						ColName: "id",

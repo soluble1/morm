@@ -3,7 +3,7 @@ package valuer
 import (
 	"database/sql"
 	"morm/internal/errs"
-	"morm/internal/model"
+	"morm/model"
 	"reflect"
 )
 
@@ -58,7 +58,7 @@ func (r *reflectValue) SetColumns(rows *sql.Rows) error {
 	for i, col := range cols {
 		fd := r.model.ColumnMap[col]
 		//tVal.FieldByName(fd.goName).Set(reflect.ValueOf(vals[i]))
-		tVal.FieldByName(fd.GoName).Set(eleVals[i])
+		tVal.FieldByIndex(fd.Index).Set(eleVals[i])
 	}
 	return nil
 }
