@@ -34,6 +34,9 @@ func (s *Selector[T]) From(tbl string) *Selector[T] {
 func NewSelector[T any](db *DB) *Selector[T] {
 	return &Selector[T]{
 		db: db,
+		builder: builder{
+			dialect: db.dialect,
+		},
 	}
 }
 
@@ -58,9 +61,7 @@ func (s *Selector[T]) Build() (*Query, error) {
 				if i > 0 {
 					s.sb.WriteByte(',')
 				}
-				s.sb.WriteByte('`')
-				s.sb.WriteString(fd.ColName)
-				s.sb.WriteByte('`')
+				s.quote(fd.ColName)
 			case Aggregate:
 				fd, ok := s.model.FieldMap[col.arg]
 				if !ok {
@@ -71,9 +72,7 @@ func (s *Selector[T]) Build() (*Query, error) {
 				}
 				s.sb.WriteString(col.fn)
 				s.sb.WriteByte('(')
-				s.sb.WriteByte('`')
-				s.sb.WriteString(fd.ColName)
-				s.sb.WriteByte('`')
+				s.quote(fd.ColName)
 				s.sb.WriteByte(')')
 			case RawExpr:
 				s.sb.WriteString(col.raw)
@@ -86,9 +85,7 @@ func (s *Selector[T]) Build() (*Query, error) {
 	s.sb.WriteString(" FROM ")
 
 	if s.tbl == "" {
-		s.sb.WriteByte('`')
-		s.sb.WriteString(s.model.TableName)
-		s.sb.WriteByte('`')
+		s.quote(s.model.TableName)
 	} else {
 		s.sb.WriteString(s.tbl)
 	}
@@ -123,13 +120,11 @@ func (s *Selector[T]) buildExpression(expression Expression) error {
 		}
 		s.args = append(s.args, expr.val)
 	case Column:
-		s.sb.WriteByte('`')
 		fd, ok := s.model.FieldMap[expr.name]
 		if !ok {
 			return errs.NewErrUnKnowField(expr.name)
 		}
-		s.sb.WriteString(fd.ColName)
-		s.sb.WriteByte('`')
+		s.quote(fd.ColName)
 	case Predicate:
 		P, ok := expr.left.(Predicate)
 		if ok && P.op != opNOT {
