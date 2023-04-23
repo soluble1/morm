@@ -194,7 +194,7 @@ func TestSelector_Get(t *testing.T) {
 		}
 	}
 
-	db, err := OpenDB(mockDB)
+	db, err := OpenDB(mockDB, DBUseReflectValuer())
 	require.NoError(t, err)
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {

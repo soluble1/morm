@@ -83,7 +83,7 @@ func TestInserter_Build(t *testing.T) {
 				FirstName: "xiao",
 				Age:       18,
 				LastName:  &sql.NullString{Valid: true, String: "long"},
-			}).OnDuplicateKey().Update(Assign("Age", 19)),
+			}).Upsert().Update(Assign("Age", 19)),
 			wantQuery: &Query{
 				SQL: "INSERT INTO `test_model`(`id`,`first_name`,`age`,`last_name`) VALUES(?,?,?,?)" +
 					" ON DUPLICATE KEY UPDATE `age`=?;",
@@ -98,7 +98,7 @@ func TestInserter_Build(t *testing.T) {
 				FirstName: "xiao",
 				Age:       18,
 				LastName:  &sql.NullString{Valid: true, String: "long"},
-			}).OnDuplicateKey().Update(C("Age")),
+			}).Upsert().Update(C("Age")),
 			wantQuery: &Query{
 				SQL: "INSERT INTO `test_model`(`id`,`first_name`,`age`,`last_name`) VALUES(?,?,?,?)" +
 					" ON DUPLICATE KEY UPDATE `age`=VALUES(`age`);",
@@ -113,7 +113,7 @@ func TestInserter_Build(t *testing.T) {
 				FirstName: "xiao",
 				Age:       18,
 				LastName:  &sql.NullString{Valid: true, String: "long"},
-			}).OnDuplicateKey().Update(Assign("Age", 19), C("FirstName")),
+			}).Upsert().Update(Assign("Age", 19), C("FirstName")),
 			wantQuery: &Query{
 				SQL: "INSERT INTO `test_model`(`id`,`first_name`,`age`,`last_name`) VALUES(?,?,?,?)" +
 					" ON DUPLICATE KEY UPDATE `age`=?,`first_name`=VALUES(`first_name`);",

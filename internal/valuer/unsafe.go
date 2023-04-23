@@ -2,6 +2,7 @@ package valuer
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/soluble1/morm/internal/errs"
 	"github.com/soluble1/morm/model"
 	"reflect"
@@ -21,6 +22,20 @@ func NewUnsafeValue(t any, model *model.Model) Value {
 		model: model,
 		addr:  addr,
 	}
+}
+
+func (u *unsafeValue) Field(name string) (any, error) {
+	fdMeta, ok := u.model.FieldMap[name]
+	if !ok {
+		return 0, fmt.Errorf("invalid field %s", name)
+	}
+	ptr := unsafe.Pointer(uintptr(u.addr) + fdMeta.Offset)
+	if ptr == nil {
+		return 0, fmt.Errorf("invalid address of the field: %s", name)
+	}
+	// 创建一个新的指向该字段的指针
+	res := reflect.NewAt(fdMeta.Typ, ptr).Elem().Interface()
+	return res, nil
 }
 
 func (u *unsafeValue) SetColumns(rows *sql.Rows) error {

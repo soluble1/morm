@@ -8,15 +8,28 @@ import (
 )
 
 type reflectValue struct {
-	t     any
+	val   reflect.Value
 	model *model.Model
 }
 
 func NewReflectValue(t any, model *model.Model) Value {
 	return &reflectValue{
-		t:     t,
+		val:   reflect.ValueOf(t).Elem(),
 		model: model,
 	}
+}
+
+func (r *reflectValue) Field(name string) (any, error) {
+	val := r.val
+
+	// 判断一下这个字段存不存在
+	typ := val.Type()
+	_, ok := typ.FieldByName(name)
+	if !ok {
+		return nil, errs.NewErrUnKnowField(name)
+	}
+
+	return val.FieldByName(name).Interface(), nil
 }
 
 func (r *reflectValue) SetColumns(rows *sql.Rows) error {
@@ -24,6 +37,7 @@ func (r *reflectValue) SetColumns(rows *sql.Rows) error {
 	if !rows.Next() {
 		return errs.ErrNoRows
 	}
+	// Columns 返回查询结果中的所有列名
 	cols, err := rows.Columns()
 	if err != nil {
 		return err
@@ -53,8 +67,7 @@ func (r *reflectValue) SetColumns(rows *sql.Rows) error {
 	}
 
 	// vals = [123, "long", 18, "xiao"] 将他放到 T 中返回
-	t := r.t
-	tVal := reflect.ValueOf(t).Elem()
+	tVal := r.val
 	for i, col := range cols {
 		fd := r.model.ColumnMap[col]
 		//tVal.FieldByName(fd.goName).Set(reflect.ValueOf(vals[i]))
