@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/soluble1/morm/internal/errs"
+	"reflect"
+	"unsafe"
 )
 
 type Selector[T any] struct {
@@ -184,6 +186,47 @@ func (s *Selector[T]) Get(ctx context.Context) (*T, error) {
 }
 
 func (s *Selector[T]) GetMulti(ctx context.Context) ([]*T, error) {
-	// TODO implement me
-	panic("implement me")
+	q, err := s.Build()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := s.db.db.QueryContext(ctx, q.SQL, q.Args...)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*T, 0, 64)
+
+	for rows.Next() {
+		t := new(T)
+		ret = append(ret, t)
+
+		cols, err := rows.Columns()
+		if err != nil {
+			return nil, err
+		}
+		// 校验列数
+		if len(cols) > len(s.model.ColumnMap) {
+			return nil, errs.ErrTooManyColumns
+		}
+
+		vals := make([]any, 0, len(cols))
+		for _, col := range cols {
+			fd, ok := s.model.ColumnMap[col]
+			if !ok {
+				return nil, errs.NewErrUnKnowColumn(col)
+			}
+
+			// 计算字段的真实地址：对象起始地址 + 字段偏移量
+			addr := unsafe.Pointer(reflect.ValueOf(t).Pointer())
+			fdVal := reflect.NewAt(fd.Typ, unsafe.Pointer(uintptr(addr)+fd.Offset))
+			// Scan 需要指针不需要调用 Elem
+			vals = append(vals, fdVal.Interface())
+		}
+
+		rows.Scan(vals...)
+	}
+
+	return ret, nil
 }

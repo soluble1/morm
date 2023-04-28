@@ -75,3 +75,7 @@ func (r *reflectValue) SetColumns(rows *sql.Rows) error {
 	}
 	return nil
 }
+
+func (r *reflectValue) GetStructs(rows *sql.Rows) error {
+	return nil
+}

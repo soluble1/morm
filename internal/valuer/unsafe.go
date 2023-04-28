@@ -67,3 +67,7 @@ func (u *unsafeValue) SetColumns(rows *sql.Rows) error {
 
 	return rows.Scan(vals...)
 }
+
+func (u *unsafeValue) GetStructs(rows *sql.Rows) error {
+	return nil
+}

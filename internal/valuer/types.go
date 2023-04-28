@@ -9,6 +9,8 @@ import (
 type Value interface {
 	// SetColumns 设置新值
 	SetColumns(rows *sql.Rows) error
+	// GetStructs 获取多行数据
+	GetStructs(rows *sql.Rows) error
 
 	Field(name string) (any, error)
 }

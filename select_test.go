@@ -209,6 +209,74 @@ func TestSelector_Get(t *testing.T) {
 
 }
 
+func TestSelector_GetMulti(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() { _ = mockDB.Close() }()
+
+	tests := []struct {
+		name     string
+		query    string
+		mockErr  error
+		mockRows *sqlmock.Rows
+		wantErr  error
+		wantVal  []*TestModel
+	}{
+		{
+			name:    "single rows",
+			query:   "SELECT .*",
+			mockErr: nil,
+			mockRows: func() *sqlmock.Rows {
+				rows := sqlmock.NewRows([]string{"id", "first_name", "age", "last_name"})
+				rows.AddRow([]byte("1"), []byte("xiao"), []byte("18"), []byte("long"))
+				rows.AddRow([]byte("2"), []byte("ma"), []byte("18"), []byte("jun"))
+				rows.AddRow([]byte("3"), []byte("lao"), []byte("18"), []byte("zhang"))
+				return rows
+			}(),
+			wantVal: []*TestModel{
+				{
+					Id:        1,
+					FirstName: "xiao",
+					Age:       18,
+					LastName:  &sql.NullString{Valid: true, String: "long"},
+				},
+				{
+					Id:        2,
+					FirstName: "ma",
+					Age:       18,
+					LastName:  &sql.NullString{Valid: true, String: "jun"},
+				},
+				{
+					Id:        3,
+					FirstName: "lao",
+					Age:       18,
+					LastName:  &sql.NullString{Valid: true, String: "zhang"},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		if tc.mockErr != nil {
+			mock.ExpectQuery(tc.query).WillReturnError(tc.mockErr)
+		} else {
+			mock.ExpectQuery(tc.query).WillReturnRows(tc.mockRows)
+		}
+	}
+
+	db, err := OpenDB(mockDB, DBUseReflectValuer())
+	require.NoError(t, err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res, err := NewSelector[TestModel](db).GetMulti(context.Background())
+			assert.Equal(t, tt.wantErr, err)
+			if err != nil {
+				return
+			}
+			assert.Equal(t, tt.wantVal, res)
+		})
+	}
+}
+
 func TestSelector_Select(t *testing.T) {
 	db := memoryDB(t)
 	tests := []struct {
