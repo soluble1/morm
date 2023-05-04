@@ -1,6 +1,7 @@
 package morm
 
 import (
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/soluble1/morm/internal/errs"
 	"github.com/stretchr/testify/assert"
 	"testing"

@@ -1,6 +1,8 @@
 package morm
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"github.com/soluble1/morm/internal/errs"
 )
@@ -11,6 +13,20 @@ type Updater[T any] struct {
 
 	sets  []Predicate
 	where []Predicate
+}
+
+func (u *Updater[T]) Exec(ctx context.Context) sql.Result {
+	q, err := u.Build()
+	if err != nil {
+		return Result{
+			err: err,
+		}
+	}
+	res, err := u.db.db.ExecContext(ctx, q.SQL, q.Args...)
+	return Result{
+		res: res,
+		err: err,
+	}
 }
 
 func NewUpdater[T any](db *DB) *Updater[T] {
